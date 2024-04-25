@@ -12,8 +12,6 @@ intervals=[[0,300],[300,500],[500,700]]
 
 ### 
 
-
-
 # Data file (csv) and universal BN dotfile inputs
 
 datafile=sys.argv[0]
@@ -25,7 +23,7 @@ R=rs.Rescore(dotfile=dotfile,datacsv=datafile,intervals=intervals)
 
 R.runintervals()
 
-
 # Output generation
-# Create an output csv for each interval and corresponding scores and diffs
-R.outputs()
+# Create an output csv for each interval and corresponding scores
+# If writedot is changed to true then a dot file will be produced for each interval
+R.outputs(writedot=False)

@@ -2,9 +2,8 @@ import numpy as np
 import sys
 import csv
 import pygraphviz as pgv
-sys.path.append('/home/bmanookian/python_codes/')
-sys.path.append('/home/bmanookian/Timescan')
 import entropy as en
+import pickle
 
 
 def datareader(inputfile):
@@ -47,10 +46,19 @@ def intervalMI(data,edgenums,w):
     return [en.mi_p([data[i][w[0]:w[1]],data[j][w[0]:w[1]]]) for i,j in edgenums]
 
 
+def changeedgelabels(graph,scores):
+    E=graph.edges()
+    for i,j in enumerate(E):
+        graph.get_edge(j[0],j[1]).attr['label']=scores[i]
+
+def graphtopickle(graph,outfile):
+    with open (outfile, 'wb') as f:
+        pickle.dump(graph,f)
+
+
 class Rescore():
    
     def __init__(self,dotfile,datacsv,intervals):
-        print('test')
         self.dotfile=dotfile
         self.intervals=intervals
         self.datacsv=datareader(datacsv)
@@ -66,15 +74,22 @@ class Rescore():
             scores=intervalMI(self.data.T,edgenums,i)
             self.scores.append(scores)
 
-    def outputs(self):
+    def outputs(self,writedot=False):
         sources=np.array([i.split('->') for i in self.edges])[:,0]
         targets=np.array([i.split('->') for i in self.edges])[:,1]
-        labels=np.array(['source','target','MI_score'])
+        labels=np.array(['source','target','weight'])
         self.outarr=[]
+        G=pgv.AGraph(self.dotfile)
         for j,i in enumerate(self.intervals):
             scores=np.array(self.scores[j]).astype(float)
             outarr=np.column_stack((sources,targets,scores))
             self.outarr.append(outarr)
-            datawrite(f'./interval{j+1}_{i[0]}-{i[1]}.csv',outarr,labels)
+            datawrite(f'./intv{j+1}_{i[0]}-{i[1]}.csv',outarr,labels)
+            if writedot==True:
+                cG=G
+                changeedgelabels(cG,self.scores[j])
+                cG.write(f'./intv{j+1}_{i[0]}-{i[1]}.dot')
+                
+                
             
 
