@@ -11,9 +11,13 @@ import rescore as rs
 intervals=[[0,300],[300,500],[500,700]]
 
 ### 
+# TO RUN
 
-# Data file (csv) and universal BN dotfile inputs
+# Run this python file (run.py) with Data file (csv) and universal BN dotfile as inputs
+###
 
+
+###
 datafile=sys.argv[0]
 dotfile=sys.argv[1]
 
