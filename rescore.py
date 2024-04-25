@@ -1,9 +1,10 @@
 import numpy as np
 import sys
 import csv
+import pygraphviz as pgv
 sys.path.append('/home/bmanookian/python_codes/')
-import diffgraph as dg
-
+sys.path.append('/home/bmanookian/Timescan')
+import entropy as en
 
 
 def datareader(inputfile):
@@ -22,81 +23,57 @@ def datawrite(output,data,labels=None):
         for row in data:
             csv_writer.writerow(row)
 
+# Get edges from dot file
+def getedgefromdot(dotfile):
+    G=pgv.AGraph(dotfile)
+    nodes=np.sort(np.array(G.nodes()))
+    edges=np.array([e[0]+'->'+e[1] for e in  np.array(G.edges())])
+    return edges
 
-def chkone(data,v,interval):
-    return np.all(data[:,v][interval[0]:interval[1]].astype(bool))
+# create library(dictionary) for labels(nodes)
+def getlabdict(nodes):
+    labdict={}
+    for index,element in enumerate(nodes):
+        labdict[element]=index
+    return labdict
 
-def chkzero(data,v,interval):
-    return np.all(~data[:,v][interval[0]:interval[1]].astype(bool))
+# Create enumerated edges array
+def edgeenumerate(edgenames,labdict):
+    edgesplit=np.array([i.split('->') for i in edgenames])
+    return np.array([[labdict[i],labdict[j]] for i,j in edgesplit])
 
-def changelastvalue(data,v,interval):
-    if data[:,v][interval[0]:interval[1]][-1]==1:
-        data[:,v][interval[0]:interval[1]][-1]=0
-    else:
-        data[:,v][interval[0]:interval[1]][-1]=1 
-    return data
+# Compute MI for all edges in given interval w
+def intervalMI(data,edgenums,w):
+    return [en.mi_p([data[i][w[0]:w[1]],data[j][w[0]:w[1]]]) for i,j in edgenums]
+
 
 class Rescore():
    
     def __init__(self,dotfile,datacsv,intervals):
+        print('test')
         self.dotfile=dotfile
         self.intervals=intervals
         self.datacsv=datareader(datacsv)
         self.data=self.datacsv[1:,:].astype(int)
         self.labels=self.datacsv[0]
         self.dirout=('./')
-        self.labs=self.labels.shape[0]
-
-
-    def checksingles(self):
-        self.singles=[]
-        for i in self.intervals:
-            t1=[chkone(self.data,v,i) for v in range(self.labs)]
-            t0=[chkzero(self.data,v,i) for v in range(self.labs)]
-            self.singles.append(np.where(np.array([np.any(t) for t in np.column_stack((t1,t0))])==True)[0])
-        return
-
-    def temp(self):
-        self.tempdata=np.copy(self.data)
-        for j,i in enumerate(self.intervals):
-            for k in self.singles[j]:
-                self.tempdata=changelastvalue(self.tempdata,k,i)       
-        
-
-    def runintervals_temp(self):
-        self.scoredicts=[]
-        self.diffdicts=[]
-        for j,i in enumerate(self.intervals):
-            out_dict,diff_dict=dg.projectData_and_diff(
-                np.vstack((self.labels,self.tempdata[i[0]:i[1],:])),
-                self.dotfile,bins=2,is_G_fixed=False
-                )
-            self.scoredicts.append(out_dict)
-            self.diffdicts.append(diff_dict)
-        self.edges=list(self.scoredicts[0].keys())
-
+        self.edges=getedgefromdot(dotfile)#./rendering.dot')
 
     def runintervals(self):
-        self.scoredicts=[]
-        self.diffdicts=[]
+        edgenums=edgeenumerate(self.edges,getlabdict(self.labels))
+        self.scores=[]
         for i in self.intervals:
-            out_dict,diff_dict=dg.projectData_and_diff(
-            np.vstack((self.labels,self.data[i[0]:i[1],:])),
-            self.dotfile,bins=2,is_G_fixed=False
-            )
-            self.scoredicts.append(out_dict)
-            self.diffdicts.append(diff_dict)
-        self.edges=list(scoredicts[0].keys())
+            scores=intervalMI(self.data.T,edgenums,i)
+            self.scores.append(scores)
 
     def outputs(self):
         sources=np.array([i.split('->') for i in self.edges])[:,0]
         targets=np.array([i.split('->') for i in self.edges])[:,1]
-        labels=np.array(['source','target','scores','diff'])
+        labels=np.array(['source','target','MI_score'])
         self.outarr=[]
         for j,i in enumerate(self.intervals):
-            scores=np.array(list(self.scoredicts[j].values())).astype(float)
-            diffs=np.array(list(self.diffdicts[j].values())).astype(float)*-1
-            outarr=np.column_stack((sources,targets,scores,diffs))
+            scores=np.array(self.scores[j]).astype(float)
+            outarr=np.column_stack((sources,targets,scores))
             self.outarr.append(outarr)
             datawrite(f'./interval{j+1}_{i[0]}-{i[1]}.csv',outarr,labels)
             

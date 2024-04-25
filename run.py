@@ -21,22 +21,9 @@ dotfile=sys.argv[1]
 
 R=rs.Rescore(dotfile=dotfile,datacsv=datafile,intervals=intervals)
 
-
-# Here will be lines of code for checking for single states in intervals
-R.checksingles()
-R.temp()
-
-
-
 ## Rescoring
-    ### NOTE: Only one runinterval should be run before output generation
 
-# This will run the rescoring for given intervals
-R.runintervals_temp()
-
-
-# The below line of code will run intervals without any alterations
-# R.runintervals()
+R.runintervals()
 
 
 # Output generation
