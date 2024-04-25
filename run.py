@@ -18,8 +18,8 @@ intervals=[[0,300],[300,500],[500,700]]
 
 
 ###
-datafile=sys.argv[0]
-dotfile=sys.argv[1]
+datafile=sys.argv[1]
+dotfile=sys.argv[2]
 
 R=rs.Rescore(dotfile=dotfile,datacsv=datafile,intervals=intervals)
 
