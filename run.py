@@ -3,7 +3,7 @@ import sys
 sys.path.append('/home/bmanookian/Rescore/')
 import rescore as rs
 
-### INTERVALS ###
+### INTERVALS ####
 
 # Input the intervals for which you would like to rescore with
 # change the variable accordingly for desired number of intervals
